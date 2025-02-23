@@ -8,7 +8,7 @@ const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");        // ejs-mate is a Node.js package that provides a layout and partial rendering engine for EJS (Embedded JavaScript) templates. It enhances the functionality of EJS by allowing you to use features like layout inheritance
 const wrapAsync = require("./utils/wrapAsync.js");
 const ExpressError = require("./utils/ExpressError.js");
-const { wrap } = require("module");
+const { listingSchema } = require("./schema.js");
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
@@ -74,13 +74,35 @@ app.post("/listings", wrapAsync(async (req, res, next) => {
     // await listing.save();
 
     // this is a way of accessing and inserting values. Instead this, a better way is possible
-    // by creating "listing" object with the keys see new.ejs
+    // by creating "listing" object with the keys see (new.ejs)
 
     // meth2 :
-    if(!req.body.listing) {
-        throw new ExpressError(400, "Send valid data for listing");
+    // if(!req.body.listing) {
+    //     throw new ExpressError(400, "Send valid data for listing");
+    // }
+
+    // Suppose a case, we are sending the listing object with hoppscotch but only with title and description (not all values) still it will add the listing because we don't have validation for individual fields
+    // We have 2 methods to tackle this situation (Method1, Method2)
+
+    // Method2 :
+    const result = listingSchema.validate(req.body);
+    console.log(result);
+    if(result.error) {      // if error exist in the result then throw error
+        throw new ExpressError(400, result.error);
     }
+    
     let newListing = new Listing(req.body.listing);
+
+    // Method1 :
+    // if(!newListing.description) {
+    //     throw new ExpressError(400, "Description is missing");
+    // }
+    // if(!newListing.price) {
+    //     throw new ExpressError(400, "Price is missing");
+    // }
+    // And so on for the rest of the fields...
+    // This method is lengthy and requires if condition for all the fields
+
     await newListing.save();
     res.redirect("/listings");
 }));
@@ -101,7 +123,7 @@ app.get("/listings/:id/edit", wrapAsync(async (req, res) => {
 
 // Update route
 app.put("/listings/:id", wrapAsync(async (req, res) => {
-    if(!req.body.listing) {
+    if (!req.body.listing) {
         throw new ExpressError(400, "Send valid data for listing");
     }
     let { id } = req.params;
@@ -122,8 +144,8 @@ app.all("*", (req, res, next) => {
 });
 
 app.use((err, req, res, next) => {
-    let {status=500, message="Some error occurred"} = err;
-    res.status(status).render("error.ejs", {message});
+    let { status = 500, message = "Some error occurred" } = err;
+    res.status(status).render("error.ejs", { message });
 });
 
 app.listen(port, () => {
