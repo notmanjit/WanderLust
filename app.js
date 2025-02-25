@@ -33,6 +33,21 @@ app.get("/", (req, res) => {
     res.render("listings/root.ejs");
 });
 
+
+// Writing Method2 as a function
+const validateListing = (req, res, next) => {
+    // const result = listingSchema.validate(req.body);
+    // console.log(result);
+    const {error} = listingSchema.validate(req.body);
+    console.log(error);
+    if(error) {
+        let errMsg = error.details.map(el => el.message).join(",");
+        throw new ExpressError(400, errMsg);
+    } else {
+        next();
+    }
+}
+
 // app.get("/testListing", async (req, res) => {
 //     let sampleListing = new Listing({
 //         title: "My New Villa",
@@ -60,7 +75,7 @@ app.get("/listings/new", (req, res) => {
 });
 
 // Create route
-app.post("/listings", wrapAsync(async (req, res, next) => {
+app.post("/listings", validateListing, wrapAsync(async (req, res, next) => {
     // meth1 :
     // let {title, description, image, price, location, country} = req.body;
     // let listing = new Listing({
@@ -85,11 +100,13 @@ app.post("/listings", wrapAsync(async (req, res, next) => {
     // We have 2 methods to tackle this situation (Method1, Method2)
 
     // Method2 :
-    const result = listingSchema.validate(req.body);
-    console.log(result);
-    if(result.error) {      // if error exist in the result then throw error
-        throw new ExpressError(400, result.error);
-    }
+    // const result = listingSchema.validate(req.body);
+    // console.log(result);
+    // if(result.error) {      // if error exist in the result then throw error
+    //     throw new ExpressError(400, result.error);
+    // }
+
+    // You can write this Method2 part in a function and pass it as a middleware to this route
     
     let newListing = new Listing(req.body.listing);
 
@@ -122,10 +139,10 @@ app.get("/listings/:id/edit", wrapAsync(async (req, res) => {
 }));
 
 // Update route
-app.put("/listings/:id", wrapAsync(async (req, res) => {
-    if (!req.body.listing) {
-        throw new ExpressError(400, "Send valid data for listing");
-    }
+app.put("/listings/:id", validateListing, wrapAsync(async (req, res) => {
+    // if (!req.body.listing) {
+    //     throw new ExpressError(400, "Send valid data for listing");      // since we are using validateListing function as a middleware, so now validation will be handled by the middleware (this part is no more needed)
+    // }
     let { id } = req.params;
     // let listing = req.body.listing;
     await Listing.findByIdAndUpdate(id, { ...req.body.listing });
