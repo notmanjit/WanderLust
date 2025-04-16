@@ -9,6 +9,7 @@ const ejsMate = require("ejs-mate");        // ejs-mate is a Node.js package tha
 const wrapAsync = require("./utils/wrapAsync.js");
 const ExpressError = require("./utils/ExpressError.js");
 const { listingSchema } = require("./schema.js");
+const Review = require("./models/review.js");
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
@@ -155,6 +156,20 @@ app.delete("/listings/:id", wrapAsync(async (req, res) => {
     console.log(deletedListing);
     res.redirect("/listings");
 }));
+
+// Reviews
+// Post route
+app.post("/listings/:id/reviews", async (req, res) => {
+    let listing = await Listing.findById(req.params.id);
+    let newReview = new Review(req.body.review);
+    console.log(newReview);
+    listing.reviews.push(newReview);
+
+    await newReview.save();
+    await listing.save();
+
+    res.redirect(`/listings/${listing._id}`);
+})
 
 app.all("*", (req, res, next) => {
     next(new ExpressError(404, "Page not found"));
