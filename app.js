@@ -8,8 +8,9 @@ const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");        // ejs-mate is a Node.js package that provides a layout and partial rendering engine for EJS (Embedded JavaScript) templates. It enhances the functionality of EJS by allowing you to use features like layout inheritance
 const wrapAsync = require("./utils/wrapAsync.js");
 const ExpressError = require("./utils/ExpressError.js");
-const { listingSchema } = require("./schema.js");
+const { listingSchema, reviewSchema } = require("./schema.js");
 const Review = require("./models/review.js");
+const review = require("./models/review.js");
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
@@ -34,15 +35,29 @@ app.get("/", (req, res) => {
     res.render("listings/root.ejs");
 });
 
-
+// Listing schema validation function (sever side)
 // Writing Method2 as a function
 const validateListing = (req, res, next) => {
     // const result = listingSchema.validate(req.body);
     // console.log(result);
     const {error} = listingSchema.validate(req.body);
-    console.log(error);
+    // console.log(error);
     if(error) {
         let errMsg = error.details.map(el => el.message).join(",");
+        console.log(errMsg);
+        throw new ExpressError(400, errMsg);
+    } else {
+        next();
+    }
+}
+
+// Review schema validation function (sever side)
+const validateReview = (req, res, next) => {
+    const {error} = reviewSchema.validate(req.body);
+    // console.log(error);
+    if(error) {
+        let errMsg = error.details.map(el => el.message).join(",");
+        console.log(errMsg);
         throw new ExpressError(400, errMsg);
     } else {
         next();
@@ -107,7 +122,7 @@ app.post("/listings", validateListing, wrapAsync(async (req, res, next) => {
     //     throw new ExpressError(400, result.error);
     // }
 
-    // You can write this Method2 part in a function and pass it as a middleware to this route
+    // You can write this Method2 part in a function and pass it as a middleware to this route (already done)
     
     let newListing = new Listing(req.body.listing);
 
@@ -159,7 +174,7 @@ app.delete("/listings/:id", wrapAsync(async (req, res) => {
 
 // Reviews
 // Post route
-app.post("/listings/:id/reviews", async (req, res) => {
+app.post("/listings/:id/reviews", validateReview, wrapAsync(async (req, res) => {
     let listing = await Listing.findById(req.params.id);
     let newReview = new Review(req.body.review);
     console.log(newReview);
@@ -169,7 +184,7 @@ app.post("/listings/:id/reviews", async (req, res) => {
     await listing.save();
 
     res.redirect(`/listings/${listing._id}`);
-})
+}));
 
 app.all("*", (req, res, next) => {
     next(new ExpressError(404, "Page not found"));
