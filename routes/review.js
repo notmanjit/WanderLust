@@ -2,7 +2,7 @@
 // Reviews routes
 
 const express = require("express");
-const router = express.Router({ mergeParams: true });    // the parent route /listing/:id/reviews has path parameters, it will not be accessible by default from the sub-routes (review routes). To make it accessible, you will need to pass the mergeParams option to the Router
+const router = express.Router({ mergeParams: true });    // the parent route /listing/:id/reviews has path parameters(:id), it will not be accessible by default from the sub-routes (review routes). To make it accessible, you will need to pass the mergeParams option to the Router
 const wrapAsync = require("../utils/wrapAsync.js");
 const ExpressError = require("../utils/ExpressError.js");
 const { reviewSchema } = require("../schema.js");       // Joi Schema

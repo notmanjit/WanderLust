@@ -10,6 +10,7 @@ const ejsMate = require("ejs-mate");        // ejs-mate is a Node.js package tha
 const ExpressError = require("./utils/ExpressError.js");
 // const { listingSchema, reviewSchema } = require("./schema.js");      // no longer required here due to code restructuring
 // const Review = require("./models/review.js");      // no longer required here due to code restructuring
+const session = require("express-session");
 
 const listings = require("./routes/listing.js");
 const reviews = require("./routes/review.js");
@@ -20,6 +21,19 @@ app.set("views", path.join(__dirname, "views"));
 app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride("_method"));
 app.use(express.static(path.join(__dirname, "public")));
+
+const sessionOptions = {
+    secret: "mysecret",
+    resave: false,
+    saveUninitialized: true,
+    cookie: {
+        expires: Date.now() + 1000 * 60 * 60 * 24 * 7,      // By default, no expiration is set, and if not set then delete it on a condition like exiting a web browser application.
+        maxAge: 1000 * 60 * 60 * 24 * 7,        // in milliseconds (expires in 7 days)
+        httpOnly: true
+    }
+}
+
+app.use(session(sessionOptions));
 
 app.engine("ejs", ejsMate);     // defining an engine for ejs i.e. ejsMate    // works similar like we did with "includes"
 
@@ -37,11 +51,19 @@ app.get("/", (req, res) => {
     res.render("listings/root.ejs");
 });
 
+// app.get("/hello", (req, res) => {
+//     res.cookie("greet", "namaste");
+//     res.cookie("madeIn", "India");
+//     res.cookie("hello", "hi");
+//     res.send("sent you some cookies");
+// });
+
 // Router Mounting :
 // Using app.use() to mount a router at a specific path in your app.
-// creates a base URL, and then we can directly use the router to implement a nested URL through it.
-app.use("/listings", listings);     // The app will now be able to handle requests to /listings , /listings/new , /listings/:id etc
-app.use("/listings/:id/reviews", reviews);      // listings/:id/reviews and listings/:id/reviews/:reviewId
+// creates a base URL(common path), and then we can directly use the router to implement a nested URL through it.
+app.use("/listings", listings);     // The app will now be able to handle requests to /listings , /listings/new , /listings/:id etc (for the routes of this file listing.js)
+app.use("/listings/:id/reviews", reviews);      // listings/:id/reviews and listings/:id/reviews/:reviewId (for the routes of this file review.js)
+// :id - mergeParams is used to make this parameter accessible to the router (see routes/review.js , express.Router line)
 
 
 app.all("*", (req, res, next) => {

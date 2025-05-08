@@ -2,7 +2,7 @@
 // Listings routes
 
 const express = require("express");
-const router = express.Router();    // middleware
+const router = express.Router();    // Creates new router object (middleware)
 const wrapAsync = require("../utils/wrapAsync.js");
 const ExpressError = require("../utils/ExpressError.js");
 const { listingSchema } = require("../schema.js");      // Joi Schema
