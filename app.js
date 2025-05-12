@@ -11,9 +11,21 @@ const ExpressError = require("./utils/ExpressError.js");
 // const { listingSchema, reviewSchema } = require("./schema.js");      // no longer required here due to code restructuring
 // const Review = require("./models/review.js");      // no longer required here due to code restructuring
 const session = require("express-session");
+const flash = require("connect-flash");
 
 const listings = require("./routes/listing.js");
 const reviews = require("./routes/review.js");
+
+const MONGO_URL = "mongodb://127.0.0.1:27017/wanderlust";
+
+async function main() {
+    await mongoose.connect(MONGO_URL);
+}
+
+main()
+    .then(() => console.log("successfully connected"))
+    .catch((err) => console.log(err));
+
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
@@ -21,6 +33,8 @@ app.set("views", path.join(__dirname, "views"));
 app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride("_method"));
 app.use(express.static(path.join(__dirname, "public")));
+
+app.engine("ejs", ejsMate);     // defining an engine for ejs i.e. ejsMate    // works similar like we did with "includes"
 
 const sessionOptions = {
     secret: "mysecret",
@@ -34,18 +48,15 @@ const sessionOptions = {
 }
 
 app.use(session(sessionOptions));
+app.use(flash());
 
-app.engine("ejs", ejsMate);     // defining an engine for ejs i.e. ejsMate    // works similar like we did with "includes"
-
-const MONGO_URL = "mongodb://127.0.0.1:27017/wanderlust";
-
-async function main() {
-    await mongoose.connect(MONGO_URL);
-}
-
-main()
-    .then(() => console.log("successfully connected"))
-    .catch((err) => console.log(err));
+app.use((req, res, next) => {
+    res.locals.success = req.flash("success");  // storing in locals and we can use it in index.ejs (like <%= success %>) but we will write it in boilerplate.ejs and access using includes (reason given in "flash.ejs")
+    // console.log(res.locals.success);
+    res.locals.error = req.flash("error");
+    // console.log(res.locals.error);
+    next();
+});
 
 app.get("/", (req, res) => {
     res.render("listings/root.ejs");

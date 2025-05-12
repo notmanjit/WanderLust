@@ -34,6 +34,7 @@ router.post("/", validateReview, wrapAsync(async (req, res) => {        // actua
     await newReview.save();
     await listing.save();
 
+    req.flash("success", "New Review Created!");
     res.redirect(`/listings/${listing._id}`);
 }));
 
@@ -45,6 +46,7 @@ router.delete("/:reviewId", wrapAsync(async (req, res) => {        // actual /li
     await Listing.findByIdAndUpdate(id, { $pull: { reviews: reviewId } })   // The $pull operator removes from an existing array all instances of a value or values that match a specified condition.
     await Review.findByIdAndDelete(reviewId);
 
+    req.flash("success", "Review Deleted!");
     res.redirect(`/listings/${id}`);
 
 }))

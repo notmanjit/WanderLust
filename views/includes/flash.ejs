@@ -1,0 +1,17 @@
+<% if (success.length) { %>     <!-- array length > 0. If "if" statement not used then the alert bar will keep showing without any message (try without if statement to understand) -->
+    <div class="alert alert-success alert-dismissible fade show col-6 offset-3" role="alert">
+        <%= success %>
+        
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+<% } %>
+
+<!-- success/error in flash.ejs because we may need the message in every addition, deletion, updation for listings and reviews 
+ and writing it seperately in all the templates makes repeatation of code. So, writing in boilerplate.ejs using includes makes availablilty to all ejs templates -->
+
+<% if (error.length) { %>       <!-- same reason like success -->
+    <div class="alert alert-danger alert-dismissible fade show col-6 offset-3" role="alert">
+        <%= error %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+<% } %>
