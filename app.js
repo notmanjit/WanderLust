@@ -12,9 +12,13 @@ const ExpressError = require("./utils/ExpressError.js");
 // const Review = require("./models/review.js");      // no longer required here due to code restructuring
 const session = require("express-session");
 const flash = require("connect-flash");
+const passport = require("passport");
+const LocalStrategy = require("passport-local");
+const User = require("./models/user.js");
 
-const listings = require("./routes/listing.js");
-const reviews = require("./routes/review.js");
+const listingRouter = require("./routes/listing.js");
+const reviewRouter = require("./routes/review.js");
+const userRouter = require("./routes/user.js");
 
 const MONGO_URL = "mongodb://127.0.0.1:27017/wanderlust";
 
@@ -50,11 +54,19 @@ const sessionOptions = {
 app.use(session(sessionOptions));
 app.use(flash());
 
+app.use(passport.initialize());     // initializes Passport in your Express application (required for authentication)
+app.use(passport.session());        // allows to keep users logged in between requests by using cookies and sessions. Without this, login sessions won't work, and users would have to log in on every request.
+
+passport.use(new LocalStrategy(User.authenticate()));   // This sets up the Local Strategy for authentication using a username and password. Here, User.authenticate() is a method provided by passport-local-mongoose that checks the user's credentials. It handles hashing, comparing passwords, and finding the user in the database.
+passport.serializeUser(User.serializeUser());       // When a user logs in, serializeUser() stores the user's ID (here i.e. MongoDB _id) into the session cookie to keep it lightweight
+passport.deserializeUser(User.deserializeUser());   // Uses the stored user ID from the session to retrieve the full user object from the database on every request, attaching it to req.user (holds full user object for that route).
+
 app.use((req, res, next) => {
     res.locals.success = req.flash("success");  // storing in locals and we can use it in index.ejs (like <%= success %>) but we will write it in boilerplate.ejs and access using includes (reason given in "flash.ejs")
     // console.log(res.locals.success);
     res.locals.error = req.flash("error");
     // console.log(res.locals.error);
+    res.locals.currUser = req.user;
     next();
 });
 
@@ -62,19 +74,24 @@ app.get("/", (req, res) => {
     res.render("listings/root.ejs");
 });
 
-// app.get("/hello", (req, res) => {
-//     res.cookie("greet", "namaste");
-//     res.cookie("madeIn", "India");
-//     res.cookie("hello", "hi");
-//     res.send("sent you some cookies");
+// Demo User Registration --
+// app.get("/registerUser", async(req, res) => {
+//     let fakeUser = new User({
+//         email: "abc@gmail.com",
+//         username: "student"
+//     });
+//     let newUser = await User.register(fakeUser, "helloworld");
+//     res.send(newUser);
 // });
+
 
 // Router Mounting :
 // Using app.use() to mount a router at a specific path in your app.
 // creates a base URL(common path), and then we can directly use the router to implement a nested URL through it.
-app.use("/listings", listings);     // The app will now be able to handle requests to /listings , /listings/new , /listings/:id etc (for the routes of this file listing.js)
-app.use("/listings/:id/reviews", reviews);      // listings/:id/reviews and listings/:id/reviews/:reviewId (for the routes of this file review.js)
+app.use("/listings", listingRouter);     // The app will now be able to handle requests to /listings , /listings/new , /listings/:id etc (for the routes of this file listing.js)
+app.use("/listings/:id/reviews", reviewRouter);      // listings/:id/reviews and listings/:id/reviews/:reviewId (for the routes of this file review.js)
 // :id - mergeParams is used to make this parameter accessible to the router (see routes/review.js , express.Router line)
+app.use("/", userRouter);
 
 
 app.all("*", (req, res, next) => {
