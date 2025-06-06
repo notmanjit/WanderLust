@@ -92,6 +92,7 @@ router.post("/", isLoggedIn, validateListing, wrapAsync(async (req, res, next) =
     // You can write this Method2 part in a function and pass it as a middleware to this route (already done)
 
     let newListing = new Listing(req.body.listing);
+    newListing.owner = req.user._id;
 
     // Method1 :
     // if(!newListing.description) {
@@ -111,7 +112,7 @@ router.post("/", isLoggedIn, validateListing, wrapAsync(async (req, res, next) =
 // Show route
 router.get("/:id", wrapAsync(async (req, res) => {
     let { id } = req.params;
-    let listing = await Listing.findById(id).populate("reviews");
+    let listing = await Listing.findById(id).populate("reviews").populate("owner");
     if (!listing) {
         req.flash("error", "Oops! Listing does not exist");
         res.redirect("/listings");
