@@ -4,31 +4,20 @@
 const express = require("express");
 const router = express.Router({ mergeParams: true });    // the parent route /listing/:id/reviews has path parameters(:id), it will not be accessible by default from the sub-routes (review routes). To make it accessible, you will need to pass the mergeParams option to the Router
 const wrapAsync = require("../utils/wrapAsync.js");
-const ExpressError = require("../utils/ExpressError.js");
-const { reviewSchema } = require("../schema.js");       // Joi Schema
+// const ExpressError = require("../utils/ExpressError.js");
+// const { reviewSchema } = require("../schema.js");       // Joi Schema
 const Listing = require("../models/listing.js");
 const Review = require("../models/review.js");
-
-// Review schema validation function (sever side)
-const validateReview = (req, res, next) => {
-    const { error } = reviewSchema.validate(req.body);
-    // console.log(error);
-    if (error) {
-        let errMsg = error.details.map(el => el.message).join(",");
-        console.log(errMsg);
-        throw new ExpressError(400, errMsg);
-    } else {
-        next();
-    }
-};
+const { validateReview, isLoggedIn } = require("../middleware.js");
 
 // Reviews
 // Post review route
-router.post("/", validateReview, wrapAsync(async (req, res) => {        // actual /listings/:id/reviews  (see app.js route mounting section)
-    console.log(req.params.id);
+router.post("/", isLoggedIn ,validateReview, wrapAsync(async (req, res) => {        // actual /listings/:id/reviews  (see app.js route mounting section)
+    // console.log(req.params.id);
     let listing = await Listing.findById(req.params.id);
     let newReview = new Review(req.body.review);
-    console.log(newReview);
+    newReview.author = req.user._id;
+    // console.log(newReview);
     listing.reviews.push(newReview);
 
     await newReview.save();

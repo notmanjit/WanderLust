@@ -4,26 +4,10 @@
 const express = require("express");
 const router = express.Router();    // Creates new router object (middleware)
 const wrapAsync = require("../utils/wrapAsync.js");
-const ExpressError = require("../utils/ExpressError.js");
-const { listingSchema } = require("../schema.js");      // Joi Schema
+// const ExpressError = require("../utils/ExpressError.js");
+// const { listingSchema } = require("../schema.js");      // Joi Schema
 const Listing = require("../models/listing.js");
-const { isLoggedIn } = require("../middleware.js");
-
-// Listing schema validation function (sever side)
-// Writing Method2 as a function
-const validateListing = (req, res, next) => {
-    // const result = listingSchema.validate(req.body);
-    // console.log(result);
-    const { error } = listingSchema.validate(req.body);
-    // console.log(error);
-    if (error) {
-        let errMsg = error.details.map(el => el.message).join(",");
-        console.log(errMsg);
-        throw new ExpressError(400, errMsg);
-    } else {
-        next();
-    }
-}
+const { isLoggedIn, isOwner, validateListing } = require("../middleware.js");
 
 
 // app.get("/testListing", async (req, res) => {
@@ -89,7 +73,7 @@ router.post("/", isLoggedIn, validateListing, wrapAsync(async (req, res, next) =
     //     throw new ExpressError(400, result.error);
     // }
 
-    // You can write this Method2 part in a function and pass it as a middleware to this route (already done)
+    // You can write this Method2 part in a function and pass it as a middleware to this route (already done) see middleware.js
 
     let newListing = new Listing(req.body.listing);
     newListing.owner = req.user._id;
@@ -121,7 +105,7 @@ router.get("/:id", wrapAsync(async (req, res) => {
 }));
 
 // Edit route
-router.get("/:id/edit", isLoggedIn, wrapAsync(async (req, res) => {
+router.get("/:id/edit", isLoggedIn, isOwner, wrapAsync(async (req, res) => {
     let { id } = req.params;
     const listing = await Listing.findById(id);
     if (!listing) {
@@ -132,7 +116,7 @@ router.get("/:id/edit", isLoggedIn, wrapAsync(async (req, res) => {
 }));
 
 // Update route
-router.put("/:id", isLoggedIn, validateListing, wrapAsync(async (req, res) => {
+router.put("/:id", isLoggedIn, isOwner, validateListing, wrapAsync(async (req, res) => {
     // if (!req.body.listing) {
     //     throw new ExpressError(400, "Send valid data for listing");      // since we are using validateListing function as a middleware, so now validation will be handled by the middleware (this part is no more needed)
     // }
@@ -144,7 +128,7 @@ router.put("/:id", isLoggedIn, validateListing, wrapAsync(async (req, res) => {
     res.redirect(`/listings/${id}`);
 }));
 
-router.delete("/:id", isLoggedIn, wrapAsync(async (req, res) => {
+router.delete("/:id", isLoggedIn, isOwner, wrapAsync(async (req, res) => {
     let { id } = req.params;
     let deletedListing = await Listing.findByIdAndDelete(id);
     console.log(deletedListing);
